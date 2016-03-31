@@ -39,14 +39,19 @@ module.exports = function (app, passport) {
 	app.route('/:number')
 		.get(function(req, res) {
 			//calling urlHander function that redirect
-			urlHandler.getUrl(req.params.number, function(origin_url) {
-				if (origin_url) {
-					res.redirect(origin_url);
-				} else {
-					res.send('The shortcut is not available!');
-				}
+			if (isNaN(Number(req.params.number))) { 
+				res.send('Shortcut has to be a number!')
+			} else {
+				urlHandler.getUrl(req.params.number, function(origin_url) {
+					if (origin_url) {
+						res.redirect(origin_url);
+					} else {
+						res.send('The shortcut is not available!');
+					}
+					
+				});
+			}
 				
-			});
 			
 		});
 	
