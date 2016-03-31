@@ -15,4 +15,9 @@ var User = new Schema({
    }
 });
 
+var Url = new Schema({
+   origin: String,
+   short: Number,
+});
+
 module.exports = mongoose.model('User', User);

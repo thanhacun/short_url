@@ -1,7 +1,8 @@
 'use strict';
 
 var path = process.cwd();
-var ClickHandler = require(path + '/app/controllers/clickHandler.server.js');
+var validator = require('validator');
+var UrlHandler = require(path + '/app/controllers/urlHandler.js');
 
 module.exports = function (app, passport) {
 
@@ -12,46 +13,41 @@ module.exports = function (app, passport) {
 			res.redirect('/login');
 		}
 	}
-
-	var clickHandler = new ClickHandler();
+	
+	var urlHandler = new UrlHandler();
 
 	app.route('/')
 		.get(function(req, res) {
 			res.sendFile(path + '/public/index.html');	
 		});
-
-	app.route('/login')
-		.get(function (req, res) {
-			res.sendFile(path + '/public/login.html');
+		
+	app.route('/new/:url*')
+		//putting * after parametter will help to overcome passing url as a parameter
+		.get(function(req, res) {
+			//handle parameter
+			var origin_url = urlHandler.para2url(req.params);
+			//validate url
+			if (validator.isURL(origin_url)) {
+				//calling urlHander function that create/or show shortcut			
+				urlHandler.makeShortcut(origin_url, req, res);
+			} else {
+				res.send('Not a valid internet link!');
+			}
+			
 		});
-
-	app.route('/logout')
-		.get(function (req, res) {
-			req.logout();
-			res.redirect('/login');
+		
+	app.route('/:number')
+		.get(function(req, res) {
+			//calling urlHander function that redirect
+			urlHandler.getUrl(req.params.number, function(origin_url) {
+				if (origin_url) {
+					res.redirect(origin_url);
+				} else {
+					res.send('The shortcut is not available!');
+				}
+				
+			});
+			
 		});
-
-	app.route('/profile')
-		.get(isLoggedIn, function (req, res) {
-			res.sendFile(path + '/public/profile.html');
-		});
-
-	app.route('/api/:id')
-		.get(isLoggedIn, function (req, res) {
-			res.json(req.user.github);
-		});
-
-	app.route('/auth/github')
-		.get(passport.authenticate('github'));
-
-	app.route('/auth/github/callback')
-		.get(passport.authenticate('github', {
-			successRedirect: '/',
-			failureRedirect: '/login'
-		}));
-
-	app.route('/api/:id/clicks')
-		.get(isLoggedIn, clickHandler.getClicks)
-		.post(isLoggedIn, clickHandler.addClick)
-		.delete(isLoggedIn, clickHandler.resetClicks);
+	
 };
